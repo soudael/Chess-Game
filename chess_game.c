@@ -1,16 +1,36 @@
-// chess_game.c // version 0.2.0-alpha // --debugging
+// chess_game.c // version 0.5.0-alpha // --debugging
 #include <stdio.h>
 #include <string.h>
 
 /*PAWN MOVEMENT FUNCTION*/
-int pawn_Move(char start_pos[3], char end_pos[3], int color)
+int pawn_Move(char start_pos[3], char end_pos[3], int square_status[8][8], int color)
 {
-    if (color){
-        if (end_pos[0]==start_pos[0] && end_pos[1]>start_pos[1] && end_pos[1]<start_pos[1]+3)
-            return 1;
+    int column = start_pos[0] - 'a';
+    int start_row = 8 - (start_pos[1] - '0');
+    int end_row = 8 - (end_pos[1] - '0');
+
+    if(color){
+        if(start_pos[1] == '2'){
+            if (end_pos[0]==start_pos[0] && end_pos[1]>start_pos[1] && end_pos[1]<start_pos[1]+3){
+                for(int i = end_row; i < start_row; i++)
+                    if(square_status[i][column] == 1) return 0;
+                return 1;
+            }
+        }else{
+            if (end_pos[0]==start_pos[0] && end_pos[1] == start_pos[1]+1)
+                return 1;
+        }
     }else{
-        if (end_pos[0]==start_pos[0] && end_pos[1]<start_pos[1] && end_pos[1]>start_pos[1]-3)
-            return 1;
+        if(start_pos[1] == '7'){
+            if (end_pos[0]==start_pos[0] && end_pos[1]<start_pos[1] && end_pos[1]>start_pos[1]-3){
+                for(int i = end_row; i > start_row; i--)
+                    if(square_status[i][column] == 1) return 0;
+                return 1;
+            }
+        }else{
+            if (end_pos[0]==start_pos[0] && end_pos[1] == start_pos[1]-1)
+                return 1;
+        }
     }
     return 0;
 }
@@ -38,8 +58,9 @@ int main()
     int square_status[8][8], board_layout[8][8], piece_type[8][8];
     char start_pos[3], end_pos[3], chessboard[8][8][3], square_color[8][8];
     int run_WhiteMove, run_BlackMove, run_WhiteCapture, run_BlackCapture;
-    int color, selected_piece, update_board;
+    int color= -1, selected_piece, update_board=0;
     int i, j, start_i, start_j, end_i, end_j;
+    int round_count= 0, round=1;
 
     /*
     Along the code, positive(true) values means white pieces
@@ -146,18 +167,39 @@ int main()
         }
         printf("\n");
     }
-
     printf("\n");
 
+    printf("  \xC9");
+    for(i=0; i<8; i++) printf("\xCD\xCD\xCD");
+    printf("\xCD\xCD\xBB\n");
+
     for(i=0;i<8;i++){
+        printf("%d \xBA ", 8-i);
         for(j=0;j<8;j++){
             if(square_status[i][j])
                 printf(" %c ", board_layout[i][j]);
             else
                 printf("%c%c%c", square_color[i][j], square_color[i][j], square_color[i][j]);
         }
+        printf(" \xBA");
         printf("\n");
     }
+    printf("  \xC8");
+    for(i=0; i<8; i++) printf("\xCD\xCD\xCD");
+    printf("\xCD\xCD\xBC\n");
+    printf("    ");
+    for(i=0; i<8; i++) printf(" %c ", 'a'+i);
+
+    while(1){
+
+    printf("\n\n");
+    for(i=0;i<11;i++) printf(" ");
+    printf(":Round = %d\n", round);
+    for(i=0;i<11;i++) printf(" ");
+    if(round%2==0)
+        printf(":PRETAS\n");
+    else
+        printf(":BRANCAS\n");
 
     printf("\n Make your move:\n ");
     scanf("%2s>%2s", start_pos, end_pos);
@@ -202,14 +244,15 @@ int main()
                 end_i=i;
                 end_j=j;
                 printf(" >> end tile exists.\n\n");
-                if(color){
+                if(color==1){
                     if(piece_type[i][j]<=0){
                         if(square_status[i][j])
                             run_WhiteCapture=1;
                         else
                             run_WhiteMove=1;
                     }
-                }else{
+                }else
+                if(color==0){
                     if(piece_type[i][j]>=0){
                         if(square_status[i][j])
                             run_BlackCapture=1;
@@ -253,7 +296,7 @@ int main()
             break;
         case  6: // White Pawn --------------------------------------------------------------------
             if(run_WhiteMove){
-                if(pawn_Move(start_pos, end_pos, color)){
+                if(pawn_Move(start_pos, end_pos, square_status, color)){
                     printf(" --valid movement\n");
                     update_board=1;
                 }else{
@@ -273,9 +316,8 @@ int main()
             break;
 
         case -6: // Black Pawn --------------------------------------------------------------------
-
             if(run_BlackMove){
-                if(pawn_Move(start_pos, end_pos, color)){
+                if(pawn_Move(start_pos, end_pos, square_status, color)){
                     printf(" --valid movement\n");
                     update_board=1;
                 }else{
@@ -296,6 +338,17 @@ int main()
 
         default:
             ;
+    }
+
+    if(update_board){
+        if(round%2==0){
+            if(selected_piece>0){
+                update_board=0;
+            }
+        }else
+            if(selected_piece<0){
+                update_board=0;
+            }
     }
 
     if(update_board){
@@ -335,19 +388,33 @@ int main()
         }
         printf("\n");
     }
-
     printf("\n");
 
+    printf("  \xC9");
+    for(i=0; i<8; i++) printf("\xCD\xCD\xCD");
+    printf("\xCD\xCD\xBB\n");
+
     for(i=0;i<8;i++){
+        printf("%d \xBA ", 8-i);
         for(j=0;j<8;j++){
             if(square_status[i][j])
                 printf(" %c ", board_layout[i][j]);
             else
                 printf("%c%c%c", square_color[i][j], square_color[i][j], square_color[i][j]);
         }
+        printf(" \xBA");
         printf("\n");
     }
+    printf("  \xC8");
+    for(i=0; i<8; i++) printf("\xCD\xCD\xCD");
+    printf("\xCD\xCD\xBC\n");
+    printf("    ");
+    for(i=0; i<8; i++) printf(" %c ", 'a'+i);
 
+    if(update_board) round++;
+    round_count++;
+    update_board=0;
+    }
     printf("\n");
     return 0;
 }
